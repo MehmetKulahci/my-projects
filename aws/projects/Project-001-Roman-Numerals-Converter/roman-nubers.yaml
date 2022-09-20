@@ -10,17 +10,9 @@ Parameters:
     Description: Enter the name of your key please
     Type: AWS::EC2::KeyPair::KeyName
     Default: 
-
-
-
-Metadata:
-  
-Mappings:
-  
-Conditions:
-  
+ 
 Resources:
-WebserverSecurityGroup:
+ WebserverSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Enables SSH and HTTP # Required
@@ -35,15 +27,34 @@ WebserverSecurityGroup:
           CidrIp: 0.0.0.0/0
 webserverhost:
   Type: AWS::EC2::Instance
-  Properties:
-    
-    ImageId: ami-05fa00d4c63e32376
-    InstanceType: t2.micro
-    KeyName: !Ref Keypair
-    SecurityGroupIds:
-      SecurityGroupIds
-    SecurityGroups:
+    Properties:
+      KeyName: !Ref Keypair
+      ImageId: ami-05fa00d4c63e32376
+      InstanceType: t2.micro
+      SecurityGroupIds:
+        - !Ref WebserverSecurityGroup
+      UserData: !Base64 |
+        #!/bin/bash 
+        yum update -y
+        yum install python3 -y
+        pip3 install flask
+        cd /home/ec2-user
+        wget https://raw.githubusercontent.com/MehmetKulahci/my-projects/main/aws/projects/Project-001-Roman-Numerals-Converter/app.py
+        mkdir templates
+        cd templates
+        wget https://raw.githubusercontent.com/MehmetKulahci/my-projects/main/aws/projects/Project-001-Roman-Numerals-Converter/templates/index.html
+        wget https://raw.githubusercontent.com/MehmetKulahci/my-projects/main/aws/projects/Project-001-Roman-Numerals-Converter/templates/result.html
+        cd ..
+        python3 app.py
+      Tags:
+        - Key: Name
+          Value: !Sub Web Server of ${AWS::StackName} Stack
 
-Transform:
+
   
 Outputs:
+   WebsiteURL:
+    Value: !Sub
+      - http://${PublicAddress}
+      - PublicAddress: !GetAtt WebServerHost.PublicDnsName
+    Description: Roman Numerals Converter Application URL
